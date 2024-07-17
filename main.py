@@ -3,15 +3,75 @@ import random
 import math
 import time
 import imageio
+import numpy as np
+from scipy.io.wavfile import write
+from pydub import AudioSegment
+from pydub.generators import Sine
+import threading 
+import time
+
+from make_sounds import play_tone
+
+
+
+
+def make_sounds():
+    SAMPLE_RATE = 44100  # Samples per second
+    DURATION = 2.0       # Duration of each note in seconds
+
+    # Note frequencies (in Hz)
+    NOTE_FREQS = {
+    'C': 261.63,
+    'C#': 277.18,
+    'D': 293.66,
+    'D#': 311.13,
+    'E': 329.63,
+    'F': 349.23,
+    'F#': 369.99,
+    'G': 392.00,
+    'G#': 415.30,
+    'A': 440.00,
+    'A#': 466.16,
+    'B': 493.88,
+    }
+
+    def generate_sine_wave(frequency, duration, sample_rate):
+        t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+        wave = 0.5 * np.sin(2 * np.pi * frequency * t)  # Generate sine wave
+        return wave
+
+    def save_wave(filename, wave, sample_rate):
+        write(filename, sample_rate, wave.astype(np.float32))
+
+    def generate_and_save_chimes(notes, sample_rate, duration):
+        for note in notes:
+            if note in NOTE_FREQS:
+                frequency = NOTE_FREQS[note]
+                wave = generate_sine_wave(frequency, duration, sample_rate)
+                filename = f"{note}.wav"
+                save_wave(filename, wave, sample_rate)
+                print(f"Saved {note} as {filename}")
+            else:
+                print(f"Note {note} not found in frequency list.")
+
+    # Example usage
+    notes_to_generate = ['A', 'B', 'F#', 'C']
+    generate_and_save_chimes(notes_to_generate, SAMPLE_RATE, DURATION)
+
 
 # Initialize Pygame
 pygame.init()
+pygame.mixer.init()
+
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("Bouncing Balls")
+#sound = pygame.mixer.Sound("music/A.wav")
 
 # Define constants
 damping = 0.8
 cooldown_time = 0.5  # Cooldown time in seconds
+
+#make_sounds()
 
 # Function to create a new ball
 def create_ball(pos, speed, wall):
@@ -48,11 +108,14 @@ frames = []
 running = True
 clock = pygame.time.Clock()
 
+#stop_event = threading.Event()
+#melody_thread = threading.Thread(target=play_tone, args=(stop_event,))
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    if len(balls) >= 250:
+    if len(balls) >= 1000:
         running = False
 
     # Update each ball's position
@@ -69,6 +132,9 @@ while running:
                 current_speed = math.sqrt(ball['speed'][0]**2 + ball['speed'][1]**2)
                 balls.append(create_ball(ball['pos'], current_speed, 'left'))
                 ball['last_collision_time'] = current_time
+                threading.Thread(target=play_tone).start() # must be threaded for no lag.  
+                            
+                
         elif ball['pos'][0] + ball['radius'] > 800:
             ball['speed'][0] = -ball['speed'][0]
             current_time = time.time()
@@ -105,12 +171,12 @@ while running:
 
     # Update display
     pygame.display.flip()
-    pygame_image = pygame.display.get_surface().copy()  # Get current screen surface
-    pygame_image = pygame.image.tostring(pygame_image, 'RGB')
-    frames.append(pygame_image)
+    #frame = pygame.surfarray.array3d(screen)
+    #frame = np.transpose(frame, (1, 0, 2))  # Transpose to (height, width, color_channels)
+    #frames.append(frame)
     clock.tick(60)
 
     # Save frames as a video
-    imageio.mimwrite('animation.mp4', frames, fps=60)
+    imageio.mimwrite('videos/animation-1.mpeg', frames, fps=60)
 
 pygame.quit()
