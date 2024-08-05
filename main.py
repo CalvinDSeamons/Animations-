@@ -10,7 +10,7 @@ from pydub.generators import Sine
 import threading 
 import time
 
-from make_sounds import play_tone
+from make_sounds import beeper
 
 
 
@@ -110,6 +110,7 @@ clock = pygame.time.Clock()
 
 #stop_event = threading.Event()
 #melody_thread = threading.Thread(target=play_tone, args=(stop_event,))
+beep = beeper()
 
 while running:
     for event in pygame.event.get():
@@ -132,7 +133,7 @@ while running:
                 current_speed = math.sqrt(ball['speed'][0]**2 + ball['speed'][1]**2)
                 balls.append(create_ball(ball['pos'], current_speed, 'left'))
                 ball['last_collision_time'] = current_time
-                threading.Thread(target=play_tone).start() # must be threaded for no lag.  
+                threading.Thread(target=beep.play_sound, args=(['a','b'],)).start()  
                             
                 
         elif ball['pos'][0] + ball['radius'] > 800:
