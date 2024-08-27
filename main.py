@@ -9,6 +9,7 @@ from pydub import AudioSegment
 from pydub.generators import Sine
 import threading 
 import time
+from moviepy.editor import VideoClip, AudioFileClip
 
 from make_sounds import beeper
 
@@ -17,6 +18,12 @@ pygame.init()
 pygame.mixer.init()
 
 screen = pygame.display.set_mode((800, 600))
+
+#-------------------------------- #
+frames = []  # Movie Capture Code |
+duration = 2 # Movie Capture Code |
+#-------------------------------- # 
+
 pygame.display.set_caption("Bouncing Balls")
 #sound = pygame.mixer.Sound("music/A.wav")
 
@@ -56,10 +63,10 @@ initial_ball = {
     'last_collision_time': time.time()
 }
 balls = [initial_ball]
-frames = []
 # Main loop control
 running = True
 clock = pygame.time.Clock()
+start_time = pygame.time.get_ticks()
 beep = beeper()
 
 while running:
@@ -120,11 +127,26 @@ while running:
     for ball in balls:
         pygame.draw.circle(screen, ball['color'], (int(ball['pos'][0]), int(ball['pos'][1])), ball['radius'])
 
+    #----------------------------------------#
+    # Capture the frame
+    frame = pygame.surfarray.array3d(screen) # Movie Capture Code
+    frame = np.transpose(frame, (1, 0, 2)) # Movie Capture Code
+    frames.append(frame) # Movie Capture Code
+    #----------------------------------------#
+
+    if (pygame.time.get_ticks() - start_time) > duration * 5000:
+        break
+
     # Update display
     pygame.display.flip()
-    clock.tick(60)
+    clock.tick(30)
 
-    # Save frames as a video
-    imageio.mimwrite('videos/animation-1.mpeg', frames, fps=60)
+# Combine video frames and audio using MoviePy
+video_clip = VideoClip(lambda t: frames[int(t * 30)], duration=duration)
+#audio_clip = AudioFileClip(makesound.melody_buffer)
+#video_clip = video_clip.set_audio(audio_clip)
+
+# Export to MP4
+video_clip.write_videofile("output.mp4", fps=30)
 
 pygame.quit()
